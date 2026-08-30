@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课文打字游戏：在机场</title>
+    <!-- 引入 pinyin-pro 库自动生成拼音 -->
+    <script src="https://unpkg.com/pinyin-pro"></script>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #game-container {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 80%;
+            max-width: 900px;
+            padding: 30px;
+            position: relative;
+        }
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        #progress {
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+        #hearts {
+            font-size: 24px;
+        }
+        .heart {
+            color: red;
+            margin-left: 5px;
+            transition: opacity 0.3s;
+        }
+        .heart.used {
+            opacity: 0.2;
+        }
+        #text-display {
+            min-height: 120px;
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            line-height: 2;
+        }
+        .char-box {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 3px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .pinyin {
+            font-size: 16px;
+            color: #007BFF;
+            height: 22px;
+            visibility: hidden; /* 默认隐藏拼音 */
+        }
+        .pinyin.show {
+            visibility: visible;
+        }
+        .hanzi {
+            font-size: 32px;
+            color: black;
+            transition: color 0.2s;
+            font-weight: 500;
+        }
+        .hanzi.typed {
+            color: red;
+        }
+        #input-container {
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 90%;
+            font-size: 24px;
+            padding: 10px 15px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus {
+            border-color: #007BFF;
+        }
+        #next-btn {
+            display: none;
+            margin: 20px auto 0;
+            padding: 10px 30px;
+            font-size: 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        #next-btn:hover {
+            background-color: #218838;
+        }
+        #completion-msg {
+            display: none;
+            text-align: center;
+            font-size: 32px;
+            color: #d81b60;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="header">
+        <div id="progress">进度: 1 / 14</div>
+        <div id="hearts">
+            <span class="heart" id="heart-1">❤️</span>
+            <span class="heart" id="heart-2">❤️</span>
+            <span class="heart" id="heart-3">❤️</span>
+        </div>
+    </div>
+    
+    <div id="text-display"></div>
+    
+    <div id="input-container">
+        <input type="text" id="user-input" autocomplete="off" placeholder="请在这里开始打字..." />
+        <button id="next-btn" onclick="nextPage()">下一句</button>
+    </div>
+
+    <div id="completion-msg">🎉 恭喜你，完成了全部课文打字练习！</div>
+</div>
+
+<script>
+    // 课文拆分成的句子数组
+    const sentences = [
+        "今天，我和爸爸、妈妈都很高兴，因为这是我们动身回中国度假的日子。",
+        "我们来到机场，爸爸找了一辆行李车，推着行李一起去办登机手续。",
+        "航空公司的工作人员帮我们托运了行李，办好了登机牌。",
+        "我们拿着护照和登机牌，经过安全检查，来到了候机大厅。",
+        "大厅里有很多免税商店，商店里的东西又多又好，有的东西很便宜。",
+        "旅客们有的买纪念品，有的买化妆品，有的买特产。",
+        "我们坐在候机厅里，爸爸在看报纸，妈妈在看杂志。",
+        "我看着电子显示牌，上面不断地显示出各航班的起飞时间。",
+        "从候机厅的落地窗可以看到机场长长的跑道。",
+        "机场上空万里无云，有的飞机在降落，有的飞机在起飞。",
+        "虽然已经坐过很多次飞机，但是能这么近距离地观察这些“大家伙”，我还是特别兴奋。",
+        "这时，广播响了：“飞往香港的旅客请注意，您乘坐的 CX881 次航班，马上就要起飞了。",
+        "请您带齐自己的行李物品到 10 号登机口登机，谢谢。”",
+        "我和爸爸、妈妈都站了起来，带上行李，向登机口走去。"
+    ];
+
+    let currentIndex = 0;
+    let heartsLeft = 3;
+    const { pinyin } = pinyinPro; // 获取拼音库功能
+
+    function initPage() {
+        if (currentIndex >= sentences.length) {
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('text-display').style.display = 'none';
+            document.getElementById('input-container').style.display = 'none';
+            document.getElementById('completion-msg').style.display = 'block';
+            return;
+        }
+
+        heartsLeft = 3;
+        updateHeartsUI();
+        document.getElementById('progress').innerText = `进度: ${currentIndex + 1} / ${sentences.length}`;
+        
+        const display = document.getElementById('text-display');
+        display.innerHTML = '';
+        
+        const inputField = document.getElementById('user-input');
+        inputField.value = '';
+        inputField.disabled = false;
+        inputField.focus();
+        
+        document.getElementById('next-btn').style.display = 'none';
+
+        const sentence = sentences[currentIndex];
+        
+        // 渲染汉字和隐藏的拼音
+        for (let i = 0; i < sentence.length; i++) {
+            const char = sentence[i];
+            // 获取拼音，如果是标点符号，pinyin库通常返回原符号
+            let py = pinyin(char, { toneType: 'num', type: 'array' })[0];
+            // 将带声调数字的拼音转换为音标格式
+            py = pinyin(char, { toneType: 'symbol' });
+            
+            const isPunctuation = (py === char || /^[A-Za-z0-9\s]+$/.test(char));
+
+            const charBox = document.createElement('div');
+            charBox.className = 'char-box';
+
+            const pySpan = document.createElement('div');
+            pySpan.className = 'pinyin';
+            pySpan.innerText = isPunctuation ? '' : py; // 标点符号和英文不显示拼音
+
+            const hzSpan = document.createElement('div');
+            hzSpan.className = 'hanzi';
+            hzSpan.innerText = char;
+            hzSpan.id = `char-${i}`;
+
+            // 点击查拼音逻辑
+            charBox.onclick = () => {
+                if (!isPunctuation && !pySpan.classList.contains('show')) {
+                    if (heartsLeft > 0) {
+                        heartsLeft--;
+                        updateHeartsUI();
+                        pySpan.classList.add('show');
+                    } else {
+                        alert("这一页的提示次数用完啦！");
+                    }
+                }
+            };
+
+            charBox.appendChild(pySpan);
+            charBox.appendChild(hzSpan);
+            display.appendChild(charBox);
+        }
+    }
+
+    function updateHeartsUI() {
+        for (let i = 1; i <= 3; i++) {
+            const heart = document.getElementById(`heart-${i}`);
+            if (i <= heartsLeft) {
+                heart.classList.remove('used');
+            } else {
+                heart.classList.add('used');
+            }
+        }
+    }
+
+    // 监听打字输入
+    document.getElementById('user-input').addEventListener('input', (e) => {
+        const inputVal = e.target.value;
+        const sentence = sentences[currentIndex];
+        let isComplete = false;
+
+        for (let i = 0; i < sentence.length; i++) {
+            const hzSpan = document.getElementById(`char-${i}`);
+            if (i < inputVal.length) {
+                if (inputVal[i] === sentence[i]) {
+                    hzSpan.classList.add('typed');
+                } else {
+                    hzSpan.classList.remove('typed');
+                }
+            } else {
+                hzSpan.classList.remove('typed');
+            }
+        }
+
+        // 检查是否全对
+        if (inputVal === sentence) {
+            document.getElementById('next-btn').style.display = 'block';
+            document.getElementById('user-input').disabled = true; // 打完后禁用输入框防误触
+        } else {
+            document.getElementById('next-btn').style.display = 'none';
+        }
+    });
+
+    function nextPage() {
+        currentIndex++;
+        initPage();
+    }
+
+    // 初始化第一页
+    window.onload = initPage;
+</script>
+
+</body>
+</html>
