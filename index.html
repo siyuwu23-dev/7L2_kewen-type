@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>课文打字游戏：在机场</title>
+    <title>课文打字游戏：游香港</title>
     <!-- 引入 pinyin-pro 库自动生成拼音 -->
     <script src="https://unpkg.com/pinyin-pro"></script>
     <style>
@@ -68,7 +68,7 @@
             font-size: 16px;
             color: #007BFF;
             height: 22px;
-            visibility: hidden; /* 默认隐藏拼音 */
+            visibility: hidden;
         }
         .pinyin.show {
             visibility: visible;
@@ -125,7 +125,7 @@
 
 <div id="game-container">
     <div id="header">
-        <div id="progress">进度: 1 / 14</div>
+        <div id="progress">进度: 1 / 21</div>
         <div id="hearts">
             <span class="heart" id="heart-1">❤️</span>
             <span class="heart" id="heart-2">❤️</span>
@@ -140,38 +140,37 @@
         <button id="next-btn" onclick="nextPage()">下一句</button>
     </div>
 
-    <div id="completion-msg">🎉 恭喜你，完成了全部课文打字练习！</div>
+    <div id="completion-msg">🎉 恭喜你，完成了《游香港》课文打字练习！</div>
 </div>
 
 <script>
-    // 课文拆分成的句子数组
     const sentences = [
-        "香港是现代化的国际大都市，被称为：东方之珠，",
+        "香港是现代化的国际大都市，被称为：东方之珠。",
         "是世界著名的金融、航运中心，也是有名的旅游胜地。",
         "我外公、外婆一家就住在这里。",
         "我们到达香港的第二天，舅舅就开车带我们来到港岛的太平山上。",
         "姨妈和表妹也来了。",
-        "站在山上向北望去，维多利亚港北边是九龙半岛，",
+        "站在山上向北望去，维多利亚港北边是九龙半岛。",
         "南边是香港岛，两岸高楼林立。",
         "香港会议展览中心就在港岛的海边上。",
-        "舅舅告诉我们：一九九七年七月一日零时，就是在那儿，",
+        "舅舅告诉我们：一九九七年七月一日零时，就是在那儿。",
         "中英两国政府举行了香港回归中国的政权交接仪式。",
-        "姨妈接着说：“香港现在是中国的一个特别行政区，实行'一国两制'。",
+        "姨妈接着说：香港现在是中国的一个特别行政区，实行‘一国两制’。",
         "香港人有信心把香港建设得更美好。",
-        "这时，表妹一手拿着望远镜，一手指着前边，",
-        "对我说：你看见没有？那儿有一面五星红旗。"
-        "我接过望远镜，顺着表妹指的方向望去，"
-        "只见远处有一面五星红旗在迎风飘扬。"
-        "从太平山下来，舅舅又开车带我们在市区观光。"
-        "街上车水马龙，人来人往，一片繁忙景象。"
-        "晚饭后，我们开车来到九龙，"
-        "在海边向对岸望去，港岛上灯火通明，"
+        "这时，表妹一手拿着望远镜，一手指着前边。",
+        "对我说：你看见没有？那儿有一面五星红旗。",
+        "我接过望远镜，顺着表妹指的方向望去。",
+        "只见远处有一面五星红旗在迎风飘扬。",
+        "从太平山下来，舅舅又开车带我们在市区观光。",
+        "街上车水马龙，人来人往，一片繁忙景象。",
+        "晚饭后，我们开车来到九龙。",
+        "在海边向对岸望去，港岛上灯火通明。",
         "五颜六色的彩灯倒映在水中，显得更加美丽，更加迷人。"
     ];
 
     let currentIndex = 0;
     let heartsLeft = 3;
-    const { pinyin } = pinyinPro; // 获取拼音库功能
+    const { pinyin } = pinyinPro;
 
     function initPage() {
         if (currentIndex >= sentences.length) {
@@ -198,29 +197,24 @@
 
         const sentence = sentences[currentIndex];
         
-        // 渲染汉字和隐藏的拼音
         for (let i = 0; i < sentence.length; i++) {
             const char = sentence[i];
-            // 获取拼音，如果是标点符号，pinyin库通常返回原符号
-            let py = pinyin(char, { toneType: 'num', type: 'array' })[0];
-            // 将带声调数字的拼音转换为音标格式
-            py = pinyin(char, { toneType: 'symbol' });
+            let py = pinyin(char, { toneType: 'symbol' });
             
-            const isPunctuation = (py === char || /^[A-Za-z0-9\s]+$/.test(char));
+            const isPunctuation = (py === char || /^[A-Za-z0-9\s]+$/.test(char) || /[，。！？：；‘’“”（）【】《》]/.test(char));
 
             const charBox = document.createElement('div');
             charBox.className = 'char-box';
 
             const pySpan = document.createElement('div');
             pySpan.className = 'pinyin';
-            pySpan.innerText = isPunctuation ? '' : py; // 标点符号和英文不显示拼音
+            pySpan.innerText = isPunctuation ? '' : py;
 
             const hzSpan = document.createElement('div');
             hzSpan.className = 'hanzi';
             hzSpan.innerText = char;
             hzSpan.id = `char-${i}`;
 
-            // 点击查拼音逻辑
             charBox.onclick = () => {
                 if (!isPunctuation && !pySpan.classList.contains('show')) {
                     if (heartsLeft > 0) {
@@ -250,7 +244,6 @@
         }
     }
 
-    // 监听打字输入
     document.getElementById('user-input').addEventListener('input', (e) => {
         const inputVal = e.target.value;
         const sentence = sentences[currentIndex];
@@ -269,10 +262,9 @@
             }
         }
 
-        // 检查是否全对
         if (inputVal === sentence) {
             document.getElementById('next-btn').style.display = 'block';
-            document.getElementById('user-input').disabled = true; // 打完后禁用输入框防误触
+            document.getElementById('user-input').disabled = true;
         } else {
             document.getElementById('next-btn').style.display = 'none';
         }
@@ -283,7 +275,6 @@
         initPage();
     }
 
-    // 初始化第一页
     window.onload = initPage;
 </script>
 
